@@ -1,0 +1,602 @@
+'Módulo de audio Mejorado by Samy Saravia
+
+#If Win64 Then
+    Private Declare PtrSafe Function PlaySound Lib "winmm.dll" _
+        Alias "PlaySoundA" (ByVal lpszName As String, _
+        ByVal hModule As LongPtr, ByVal dwFlags As Long) As Boolean
+#Else
+    Private Declare Function PlaySound Lib "winmm.dll" _
+        Alias "PlaySoundA" (ByVal lpszName As String, _
+        ByVal hModule As Long, ByVal dwFlags As Long) As Boolean
+#End If
+Const SND_SYNC = &H0
+Const SND_ASYNC = &H1
+Const SND_FILENAME = &H20000
+
+Function SoundMe(ByVal rutaSonido) As String
+    Call PlaySound(rutaSonido, _
+      0, SND_ASYNC Or SND_FILENAME)
+    SoundMe = ""
+End Function
+
+
+
+'Fin de Audio
+
+
+
+Private Function EliminarDuplicados(rango As Range, columna As Integer)
+'Funcion para eliminar duplicados especificando solo el rango y que columna se tiene que tomar en cuenta
+    rango.RemoveDuplicates Columns:=columna, Header:=xlNo
+End Function
+
+
+Sub mostrarGif(ruta As String, ancho As Integer, alto As Integer)
+'++++++++++++++
+'Modulo para utilizar el componente WebBrowser:
+    Me.WebBrowser1.Visible = True
+    Me.WebBrowser1.Navigate2 "about:" & _
+    "<html>" _
+       & "<body scroll=no><img background-color: transparent; src= ' " & ruta & " 'width=' " & "100%" & " ' height=' " & "100%" & " ' ></img></body>" & _
+    "</html>"
+End Sub
+
+
+
+
+Sub Asignar_Variable()
+'Esta funcion asigna el nombre a una celda para utilizarla como variable
+' Se le debe pasar el rango y ahi mismo el nombre de como se quiere llamar
+Dim referencia As String
+
+ For Each celda In Range("C2:c34")
+ referencia = "=Hoja1!" & celda.Address
+ ActiveWorkbook.Names.Add name:=celda, RefersTo:=referencia
+ Next
+End Sub
+
+
+
+Function buscarVSamHandleError(ByVal valor_a_buscar, rango_en_donde_buscar As Range, numero_columna As Integer) As String
+'Funcion para buscar datos mejorada con controlador de errores
+
+Dim resultado As String
+On Error Resume Next
+
+resultado = Application.WorksheetFunction.VLookup(valor_a_buscar, rango_en_donde_buscar, numero_columna, False)
+buscarVSamHandleError = resultado
+If Err.Number = 1004 Then
+buscarVSamHandleError = "No Existe"
+End If
+
+End Function
+
+Function buscarVSam(ByVal valor_a_buscar, rango_en_donde_buscar As Range, numero_columna As Integer) As String
+'Funcion para buscar datos mejorada sin controlador de errores, lo que no encuentra lo deja vacío
+Dim resultado As String
+
+On Error GoTo handleError:
+
+resultado = Application.WorksheetFunction.VLookup(valor_a_buscar, rango_en_donde_buscar, numero_columna, False)
+buscarVSam = resultado
+Exit Function
+
+handleError:
+Debug.Print "fallo"
+buscarVSam = "no existe"
+
+End Function
+
+Sub filtroAvanzadoParaCopiar()
+'Ésta función realiza un filtro y lo traslada hacia un rango que nosotros le especifiquemos
+' En el Action:= xlfilterCopy o xlFilterInPlace es el llave para conocer si copia o se traslada
+'El criterialRange hace referencia a Todos los filtros que quiero realizar, se debe poner siempre el nombre de la cabecera y abajo el valor que se quiere filtrar
+'Range("g2") = "11"
+Range("L:P").ClearContents
+Range("A1:E1000").AdvancedFilter Action:=xlFilterCopy, _
+CriteriaRange:=Range("G1:H2"), CopyToRange:=Range("L1"), Unique:=False
+End Sub
+
+Sub filtroNormal()
+Range("g2") = "12"
+Range("A1:E1000").AdvancedFilter Action:=xlFilterInPlace, _
+CriteriaRange:=Range("G1:H2"), Unique:=False
+End Sub
+
+'Módulo de Clase Creado por Samuel Saravia contacto: 41384756 correo: sam.saravia2010@gmail.com
+'Personalización de módulos personalizados
+Public Sub Help()
+MsgBox ("Contacte con Samuel Saravia para más información" + Chr(13) + "Correo:sam.saravia2010@gmail.com")
+End Sub
+
+
+Function GetultimaFila(hoja As Worksheet, numeroColumna As Integer) As Long
+'Funcion para encontrar la ultima fila de una hoja
+'Siempre tomara el valor de la primera columna a menos que se modifique
+Dim Target As Long
+Target = hoja.Cells(Rows.Count, numeroColumna).End(xlUp).Row
+GetultimaFila = Target
+End Function
+
+Function CopyPaste(hojaCopy As Worksheet, rangoCopy As String, hojaPaste As Worksheet, rangoPaste As String)
+    hojaCopy.Range(rangoCopy).Copy
+    hojaPaste.Range(rangoPaste).PasteSpecial Paste:=xlPasteValues
+    Application.CutCopyMode = False
+End Function
+
+Function GetSelectArchivoExcel() As String
+'MÃ³dulo para extraer la ruta de un archivo
+'Utilizado para poder abrir un archivo
+'Developer Samuel Saravia correo:sam.saravia2010@gmail.com
+Dim ruta As String
+ruta = Conversion.CStr(Application.GetOpenFilename(Title:="Selecciones el libro para importar"))
+dato1 = CDate(Date)
+datoFinal = CDate("31/10/2023")
+If dato1 <= datoFinal Then
+        If ruta = "Falso" Then
+        MsgBox ("no selecciono ningún archivo")
+        End If
+        GetSelectArchivoExcel = ruta
+Else
+    MsgBox "Contacte con Administrador: sam.saravia2010@gmail.com"
+End If
+End Function
+
+Function GetAutenticacion() As Boolean
+Dim fecha_actual As Date
+Dim fecha_vencimiento  As Date
+fecha_actual = CDate(Date)
+fecha_vencimiento = CDate("31/06/2023")
+
+If fecha_actual < fecha_vencimiento Then
+GetAutenticacion = True
+Else
+GetAutenticacion = False
+End If
+End Function
+
+
+
+Function ExportarDatosRSC() As Boolean
+Application.DisplayAlerts = False
+Application.ScreenUpdating = False
+On Error GoTo manejador_error:
+
+Dim libroDestino As Workbook
+Dim libroPrincipal As Workbook
+Dim ruta As String
+Dim rangoCopiado As String
+Dim rangoDestinoLimpiar As String
+ruta = GetSelectArchivoExcel
+
+Set libroPrincipal = ActiveWorkbook
+Set libroDestino = Workbooks.Open(ruta)
+
+
+'Rangos de copiado
+rangoCopiado = "A2:F" + CStr(GetultimaFila(libroPrincipal.Sheets("Representantes"), 1))
+'Rangos limpiar el area de pegado
+rangoDestinoLimpiar = "A2:F" + CStr(GetultimaFila(libroDestino.Sheets("RPS"), 1))
+
+libroDestino.Sheets("RPS").Range(rangoDestinoLimpiar).ClearContents
+
+libroPrincipal.Sheets("Representantes").Activate
+libroPrincipal.Sheets("Representantes").Range(rangoCopiado).Copy
+libroDestino.Sheets("RPS").Range("A2").PasteSpecial xlPasteValues
+Application.CutCopyMode = False
+
+
+libroPrincipal.Save
+libroDestino.Save
+
+libroDestino.Close
+ExportarDatosRSC = True
+
+MsgBox "Proceso finalizado"
+Debug.Print "proceso de exportacion exitosa"
+Application.ScreenUpdating = True
+
+Exit Function
+
+manejador_error:
+MsgBox "Quiza no selecciono el reporte correcto" & Err.Description
+ExportarDatosRSC = False
+Application.ScreenUpdating = True
+End Function
+
+
+Sub pintarBarraProgreso(porcentaje, anchura_actual)
+Formulario.frm_frame.Caption = Format(porcentaje, "0%")
+Formulario.lbl_barra.Width = anchura_actual
+DoEvents
+End Sub
+
+
+Sub prepararBarraProgreso(rango As Range)
+'Está función setea los valores a cero para la barra de progreso
+Range("target_numero_actual").Value = 0
+Range("target_numero_final").Value = rango.Count
+End Sub
+
+Sub habla(texto As String)
+Dim habla As Speech
+Set habla = Application.Speech
+habla.Speak (texto)
+End Sub
+
+Sub TC()
+'
+' TC Macro
+'
+
+'
+    Range("B9").Select
+    ActiveSheet.PivotTables("Tabla dinámica1").PivotFields("Area").ShowDetail = _
+        True
+    ActiveSheet.PivotTables("Tabla dinámica1").PivotFields("supervisor Bi Credit"). _
+        ShowDetail = True
+    ActiveSheet.PivotTables("Tabla dinámica1").PivotFields("TIPO").ShowDetail = _
+        True
+    ActiveSheet.PivotTables("Tabla dinámica1").PivotFields("Region").ShowDetail = _
+        True
+    ActiveSheet.PivotTables("Tabla dinámica1").PivotFields("Departamento"). _
+        ShowDetail = True
+    ActiveSheet.PivotTables("Tabla dinámica1").PivotFields("Ejecutivo").ShowDetail _
+        = True
+   
+    Cells.Select
+    Selection.ColumnWidth = 20
+    Selection.RowHeight = 20
+    With Selection
+        .HorizontalAlignment = xlGeneral
+        .VerticalAlignment = xlBottom
+        .WrapText = False
+        .Orientation = 0
+        .AddIndent = False
+        .IndentLevel = 0
+        .ShrinkToFit = False
+        .ReadingOrder = xlContext
+        .MergeCells = False
+    End With
+    With Selection
+        .HorizontalAlignment = xlGeneral
+        .VerticalAlignment = xlCenter
+        .WrapText = False
+        .Orientation = 0
+        .AddIndent = False
+        .IndentLevel = 0
+        .ShrinkToFit = False
+        .ReadingOrder = xlContext
+        .MergeCells = False
+    End With
+    Selection.UnMerge
+    Selection.EntireColumn.Hidden = False
+    Selection.EntireRow.Hidden = False
+    Range("B11").Select
+    ActiveSheet.PivotTables("Tabla dinámica1").PivotFields("Codigo").Subtotals = _
+        Array(False, False, False, False, False, False, False, False, False, False, False, False)
+    ActiveSheet.PivotTables("Tabla dinámica1").PivotFields("Ejecutivo").Subtotals _
+        = Array(False, False, False, False, False, False, False, False, False, False, False, False _
+        )
+    ActiveSheet.PivotTables("Tabla dinámica1").PivotFields("Area").Subtotals = _
+        Array(False, False, False, False, False, False, False, False, False, False, False, False)
+    ActiveSheet.PivotTables("Tabla dinámica1").PivotFields("Region").Subtotals = _
+        Array(False, False, False, False, False, False, False, False, False, False, False, False)
+    ActiveSheet.PivotTables("Tabla dinámica1").PivotFields("Departamento"). _
+        Subtotals = Array(False, False, False, False, False, False, False, False, False, False, _
+        False, False)
+    ActiveSheet.PivotTables("Tabla dinámica1").PivotFields("Status").Subtotals = _
+        Array(False, False, False, False, False, False, False, False, False, False, False, False)
+    ActiveSheet.PivotTables("Tabla dinámica1").PivotFields("Total en Q").Subtotals _
+        = Array(False, False, False, False, False, False, False, False, False, False, False, False _
+        )
+    ActiveSheet.PivotTables("Tabla dinámica1").PivotFields("TOTAL").Subtotals = _
+        Array(False, False, False, False, False, False, False, False, False, False, False, False)
+    With ActiveSheet.PivotTables("Tabla dinámica1")
+        .ColumnGrand = False
+        .RowGrand = False
+    End With
+    ActiveSheet.PivotTables("Tabla dinámica1").RowAxisLayout xlTabularRow
+    ActiveSheet.PivotTables("Tabla dinámica1").RepeatAllLabels xlRepeatLabels
+    Cells.Select
+    Selection.Copy
+    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+    Range("A6").Select
+    Application.CutCopyMode = False
+    Rows("1:7").Select
+    Range("A7").Activate
+    Selection.Delete Shift:=xlUp
+    Rows("1:1").Select
+    Selection.RowHeight = 28.8
+    Selection.RowHeight = 34.2
+    With Selection
+        .HorizontalAlignment = xlCenter
+        .VerticalAlignment = xlBottom
+        .WrapText = False
+        .Orientation = 0
+        .AddIndent = False
+        .IndentLevel = 0
+        .ShrinkToFit = False
+        .ReadingOrder = xlContext
+        .MergeCells = False
+    End With
+    With Selection
+        .HorizontalAlignment = xlCenter
+        .VerticalAlignment = xlCenter
+        .WrapText = False
+        .Orientation = 0
+        .AddIndent = False
+        .IndentLevel = 0
+        .ShrinkToFit = False
+        .ReadingOrder = xlContext
+        .MergeCells = False
+    End With
+    
+    Selection.Font.Bold = True
+    With Selection.Font
+        .ThemeColor = xlThemeColorLight1
+        .TintAndShade = 0
+    End With
+    
+End Sub
+
+
+Function borradaFilasFltradas(hojaBase As Worksheet, rangoFiltrar As String, columnaFiltrar As Integer, datoFiltrar As Integer)
+Dim ultimoDato As Long
+'Este ejemplo borrar datos que uno filtra, soluciona el error que uno no puede bajar al dato que queda abajo de las cabeceras
+hojaBase.AutoFilterMode = False
+
+With hojaBase
+If .AutoFilterMode Then .Cells.AutoFilter
+.Range(rangoFiltrar).AutoFilter Field:=columnaFiltrar, _
+Criteria1:=datoFiltrar
+
+ultimoDato = GetultimaFila(hojaBase, 1)
+
+If ultimoDato = 1 Then
+hojaBase.AutoFilterMode = False
+Exit Function
+End If
+
+With .AutoFilter.Range
+.Offset(1).Resize(.Rows.Count - 1).EntireRow.Delete
+End With
+.Cells.AutoFilter
+End With
+
+End Function
+
+'Private Sub Worksheet_SelectionChange(ByVal Target As Range)
+'metodo acepta una tecla la cual al presionar ejecutará una macro creada
+'Application.OnKey "{F1}", "Hoja1.tomala"
+'End Sub
+
+
+Function BorrarArchivo(ByVal nombreArchivo As String)
+On Error Resume Next
+Dim extension As String
+ruta_archivo = ThisWorkbook.Path
+extension = ".xlsx"
+
+ruta = ruta_archivo & Application.PathSeparator & nombreArchivo & extension
+Kill ruta
+End Function
+
+
+Function envio_de_correo(ByVal correo As String, ByVal adjunto As String)
+'parametros para el archivo
+ruta_archivo = ThisWorkbook.Path & "\"
+backslash = "\"
+nombre_archivo = adjunto
+extension = ".xlsx"
+
+'Agregamos la ruta completa del archivo con su nombre
+
+ruta_y_nombre_archivo = ruta_archivo & nombre_archivo & extension
+
+
+Cuerpo1 = Range("cuerpo1")
+Cuerpo2 = Range("cuerpo2")
+Cuerpo3 = Range("cuerpo3")
+
+textos = "<h3>" & Cuerpo1 & " </h3> <br> " & "<p>" & Cuerpo2 & " </p> <br> " & "<p>" & Cuerpo3 & " </p> <br> "
+archivo = ruta_y_nombre_archivo
+Dim olApp As Outlook.Application
+Set olApp = CreateObject("Outlook.Application")
+
+Dim olMail As Outlook.MailItem
+Set olMail = olApp.CreateItem(olMailItem)
+
+With olMail
+    .To = correo
+    .Subject = "Reporte Tiempos Espera en Agencia"
+    .CC = ""
+    .HTMLBody = textos
+    .Attachments.Add ruta_y_nombre_archivo
+    .Send
+End With
+
+
+End Function
+
+Function ordenarBase(hoja_ordenar As String, rango_ordenar_global As Range, rangoColumna_ordenar As Range) As Boolean
+'Función para ordenar cualquier rango y cualquier columna de menor a mayor
+
+On Error GoTo handleError:
+
+    ThisWorkbook.Sheets(hoja_ordenar).Sort.SortFields.Clear
+    ThisWorkbook.Sheets(hoja_ordenar).Sort.SortFields.Add2 Key:=rangoColumna_ordenar _
+    , SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortNormal
+    
+    With ThisWorkbook.Sheets(hoja_ordenar).Sort
+        .SetRange rango_ordenar_global
+        .Header = xlYes
+        .MatchCase = False
+        .Orientation = xlTopToBottom
+        .SortMethod = xlPinYin
+        .Apply
+    End With
+
+    ordenarBase = True
+Exit Function
+
+handleError:
+ordenarBase = False
+End Function
+
+Sub Nuevos_libros()
+'Funcion para crear nuevos libros
+
+Hoja_seleccionada = "Detalle agencia"
+
+'parametros para el archivo
+ruta_archivo = ThisWorkbook.Path & "\"
+backslash = "\"
+nombre_archivo = Range("filtro_agencia")
+extension = ".xlsx"
+
+'Agregamos la ruta completa del archivo con su nombre
+
+ruta_y_nombre_archivo = ruta_archivo & nombre_archivo & extension
+Debug.Print ruta_y_nombre_archivo
+    Sheets(Array("Tiempo espera en agencia")).Select
+    Sheets(Array("Tiempo espera en agencia")).Copy
+    
+    Sheets(Array("Tiempo espera en agencia")).Select
+    Cells.Select
+    Selection.Copy
+    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+    Application.CutCopyMode = False
+Application.DisplayAlerts = False
+ActiveWorkbook.SaveAs (ruta_y_nombre_archivo)
+ActiveWorkbook.Close
+End Sub
+
+Private Sub Pinta(celda As Range)
+With celda
+.Interior.Color = vbYellow
+.Font.Color = vbRed
+End With
+End Sub
+
+Private Sub DesPinta(celda As Range)
+With celda
+.Interior.Color = vbWhite
+.Font.Color = vbWhite
+End With
+End Sub
+
+
+Function createPage(pageName As String) As Boolean
+On Error GoTo handleError:
+
+ThisWorkbook.Sheets.Add.name = pageName
+createPage = True
+
+Exit Function
+handleError:
+createPage = False
+End Function
+
+Function isPage(name As String) As Boolean
+'Comprueba si una hoja existe
+On Error Resume Next
+isPage = Sheets(name).Index
+End Function
+
+Function RemoveDuplicate(RangeData As Range, columnLetter As Range, paramsHeader As XlYesNoGuess)
+'Funcion  para remover los duplicados @Range("A1:Z100") @columnLetter @ range("B1"), @xlYes
+On Error GoTo handleError:
+    RangeData.RemoveDuplicates Columns:=columnKey.Column, Header:=paramsHeader
+Exit Function
+handleError:
+MsgBox ("Ocurrio un Error Removiendo duplicados")
+End Function
+
+Sub show_selected_items()
+'Funcion para seleccionado de archivos multiples
+
+Dim ob As Object, files As Object, file As Object
+
+Dim FolderName As String
+
+With Application.FileDialog(msoFileDialogFilePicker)
+
+.AllowMultiSelect = True
+
+.Show
+
+For i = 1 To .SelectedItems.Count
+
+MsgBox .SelectedItems(i)
+
+Next i
+
+End With
+
+End Sub
+
+
+Private Sub EnviarCorreo()
+'Envia correo con un screen de pantalla especificado
+
+Application.DisplayAlerts = False
+
+correoAG = Range("correo_target")
+nombreAG = Range("agencia_target")
+Debug.Print correoAG
+Debug.Print nombreAG
+    
+    'Seleccionamos el rango de celdas a enviar Select
+    'ActiveSheet.Range("L1:W40").Select
+    ActiveSheet.Range("L1:BC40").Select
+
+    
+    'Mostramos la sección para enviar correo.
+    ActiveWorkbook.EnvelopeVisible = True
+    
+    'Llamamos al envío...
+    With ActiveSheet.MailEnvelope
+       .Item.To = correoAG
+       .Item.CC = "ssaravia@bi.com.gt"             'con copia a... "ssaravia@bi.com.gt"
+       '.Item.BCC = ""     'con copia oculta a...
+       .Item.Subject = "CONEXIONES EN AGENCIA :  " & Range("agencia_target") & " DE REPRESENTANTES"
+       .Introduction = "Buen día estimado/a," & Chr(13) _
+       & " Adjunto el reporte de conexiones en representantes correspondientes al " & Range("fecha_final")
+       .Item.Send
+    End With
+    'selecciona la primera celda para que no se mantenga el rango seleccionado
+     Range("A6").Select
+    Exit Sub
+ End Sub
+
+Function RemplazarPalabra(rango As Range, textoBuscar As String, textoRemplazar As String)
+' RemplazarPalabraAutoliquidables
+    rango.Select
+    Selection.Replace What:=textoBuscar, Replacement:=textoRemplazar, _
+        LookAt:=xlWhole, SearchOrder:=xlByRows, MatchCase:=False, SearchFormat:= _
+        False, ReplaceFormat:=False, FormulaVersion:=xlReplaceFormula2
+End Function
+
+Function CorreosDelimitados(cadena As String) As String
+    Dim regex As Object
+    Dim matches As Object
+    Dim correo As Object
+    Dim resultado As String
+    
+    Set regex = CreateObject("VBScript.RegExp")
+    regex.Pattern = "\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"
+    regex.Global = True
+    
+    Set matches = regex.Execute(cadena)
+    
+    For Each correo In matches
+        resultado = resultado & correo.Value & ";"
+    Next correo
+    
+    CorreosDelimitados = Left(resultado, Len(resultado) - 1)
+End Function
+
+
